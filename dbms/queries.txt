@@ -1,0 +1,77 @@
+create table users(
+	voter_id varchar(30) not null primary key,
+	credentials varchar(100) not null,
+	name varchar(100) not null,
+	dept varchar(10) not null,
+	year int not null
+);
+
+
+create table elections(
+	election_id varchar(15) not null primary key,
+	organisation varchar(100) not null,
+	post varchar(100) not null,
+	election_date date not null,
+	start_time time not null,
+	end_time time not null,
+	remark varchar(1000)
+);
+
+
+create table active_elections(
+	election_id varchar(15) not null,
+	voter_id varchar(30) not null,
+	foreign key(voter_id) references users(voter_id),
+	foreign key(election_id) references elections(election_id)
+);
+
+create or replace function add_to_active()
+returns trigger as $add_to_active$
+DECLARE
+eid varchar(30);
+v varchar(70);
+BEGIN
+
+eid:= tg_argv[0];
+eid:= concat(E'\'',eid,E'\'');
+v:= concat(E'\'',new.voter_id,E'\'');
+execute(concat('insert into active_elections values(',eid,' , ',v,' );'));
+
+RETURN NEW;	
+END;
+	
+$add_to_active$	
+LANGUAGE plpgsql
+;
+
+
+create or replace function delete_from_active()
+returns trigger as $delete_from_active$
+DECLARE
+eid varchar(30);
+v varchar(70);
+BEGIN
+
+eid:= tg_argv[0];
+eid:= concat(E'\'',eid,E'\'');
+v:= concat(E'\'',new.voter_id,E'\'');
+execute(concat('delete from active_elections where election_id = ',eid,' and voter_id = ',v,' ;'));
+
+RETURN NEW;	
+END;
+	
+$delete_from_active$	
+LANGUAGE plpgsql
+;
+
+select * from pepr231224_votechain;
+
+/*
+select * from p2pr230924_votescasted;
+select * from elections;
+delete from users;
+delete from elections;
+drop table p2pr230924_votescasted;
+drop table p2pr230924_candidates;
+drop table p2pr230924_electoralroll;
+*/
